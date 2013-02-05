@@ -41,21 +41,20 @@ func newRAMSessionsForTesting(maxAge int, clock func() int64) *RAMSessions {
 // Get returns nil if the session ID does not exist or if the session data
 // for the session ID expired from too much inactivity.
 func (r *RAMSessions) Get(id string) map[interface{}]interface{} {
-  r.mutex.Lock()
-  defer r.mutex.Unlock()
-  ramSession := r.data[id]
-  if ramSession == nil {
+  result := r.get(id)
+  if result == nil {
     return nil
   }
-  return ramSession.Get(r.clock(), r.maxAge)
+  return copyMap(result)
 }
 
 // Save saves new session data for a particular session ID.
 // Save makes a shallow copy of data before saving it.
 func (r *RAMSessions) Save(id string, data map[interface{}]interface{}) {
+  data = copyMap(data)
   r.mutex.Lock()
   defer r.mutex.Unlock()
-  r.data[id] = newRAMSession(data, r.clock())
+  r.data[id] = &ramSession{data, r.clock()}
 }
 
 // Purge removes session data that has already expired. Clients need not call
@@ -71,6 +70,16 @@ func (r *RAMSessions) Purge() {
   }
 }
 
+func (r *RAMSessions) get(id string) map[interface{}]interface{} {
+  r.mutex.Lock()
+  defer r.mutex.Unlock()
+  ramSession := r.data[id]
+  if ramSession == nil {
+    return nil
+  }
+  return ramSession.Get(r.clock(), r.maxAge)
+}
+
 func (r *RAMSessions) lenForTesting() int {
   r.mutex.Lock()
   defer r.mutex.Unlock()
@@ -82,16 +91,12 @@ type ramSession struct {
   lastAccessed int64
 }
 
-func newRAMSession(data map[interface{}]interface{}, now int64) *ramSession {
-  return &ramSession{copyMap(data), now}
-}
-
 func (r *ramSession) Get(now int64, maxAge int64) map[interface{}]interface{} {
   if r.Expired(now, maxAge) {
     return nil
   }
   r.lastAccessed = now
-  return copyMap(r.data)
+  return r.data
 }
 
 func (r *ramSession) Expired(now int64, maxAge int64) bool {
