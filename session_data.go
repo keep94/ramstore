@@ -10,6 +10,10 @@ import (
 // be safely used with multiple goroutines. Clients should not use this type
 // directly, but should use RAMStore instead.
 type RAMSessions struct {
+  // In addition to the fields of this struct, mutex protects the contents of
+  // the data map as well as the fields of each ramSession struct, but it
+  // does not protect the contents of the map in each ramSession struct.
+  // Therefore, goroutines must treat the contents of these maps as frozen.
   mutex sync.Mutex
   data map[string]*ramSession
   clock func() int64
