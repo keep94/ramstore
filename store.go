@@ -45,7 +45,8 @@ func (s *RAMStore) Get(r *http.Request, name string) (*sessions.Session, error) 
 // error.
 func (s *RAMStore) New(r *http.Request, name string) (*sessions.Session, error) {
   session := sessions.NewSession(s, name)
-  session.Options = &(*s.Options)
+  defaultOptions := *s.Options
+  session.Options = &defaultOptions
   session.IsNew = true
   if c, errCookie := r.Cookie(name); errCookie == nil {
     session.ID = c.Value
