@@ -18,6 +18,6 @@ be clearly marked as "draft" in the documentation.
 
 ## Online Documentation
 
-Online documentation is available [here](http://go.pkgdoc.org/github.com/keep94/ramstore).
+Online documentation is available [here](http://godoc.org/github.com/keep94/ramstore).
 
 Gorilla web toolkit sessions documentation is available [here] (http://www.gorillatoolkit.org/pkg/sessions).
