@@ -6,8 +6,13 @@
 package ramstore
 
 import (
+  "errors"
   "net/http"
   "testing"
+)
+
+var (
+  errSessionData = errors.New("ramstore_test: Error in session data.")
 )
 
 func TestChangeOptions(t *testing.T) {
@@ -97,6 +102,67 @@ func TestSaveGet(t *testing.T) {
   }
 }
 
+func TestUseSData(t *testing.T) {
+  // Get new session
+  request := &http.Request{}
+  s := NewRAMStore(900)
+  s = withSData(s, s.Data)
+  session, err := s.Get(request, "session-cookie")
+  if err != nil {
+    t.Errorf("Expected no error getting session, got %v", err)
+  }
+  // Populate session with data and save session
+  session.Values["count"] = 3
+  w := &responseWriter{http.Header{}}
+  err = session.Save(request, w)
+  if err != nil {
+    t.Errorf("Expected no error saving, got %v", err)
+  }
+
+  // Get saved session
+  anotherRequest := &http.Request{Header: http.Header{"Cookie": w.Header()["Set-Cookie"]}}
+  session, err = s.Get(anotherRequest, "session-cookie")
+  if err != nil {
+    t.Errorf("Expected no error getting session, got %v", err)
+  }
+  if session.IsNew {
+    t.Error("Expected session not to be new.")
+  }
+  if output := len(session.Values); output != 1 {
+    t.Errorf("Expected session.Values to be of length 1, got %v", output)
+  }
+  if output := session.Values["count"]; output != 3 {
+    t.Errorf("Expected 3, got %v", output)
+  }
+}
+
+func TestErrorGettingSession(t *testing.T) {
+  cookie := "session-cookie=123456; Path=/"
+  request := &http.Request{Header: http.Header{"Cookie": []string{cookie}}}
+  s := withSData(NewRAMStore(900), errorData{})
+  _, err := s.Get(request, "session-cookie")
+  if err != errSessionData {
+    t.Errorf("Expected errSessionData, got %v", err)
+  }
+}
+
+func TestErrorSavingSession(t *testing.T) {
+  // Get new session
+  request := &http.Request{}
+  s := withSData(NewRAMStore(900), errorData{})
+  session, err := s.Get(request, "session-cookie")
+  if err != nil {
+    t.Errorf("Expected no error getting session, got %v", err)
+  }
+  // Populate session with data and save session
+  session.Values["count"] = 3
+  w := &responseWriter{http.Header{}}
+  err = session.Save(request, w)
+  if err != errSessionData {
+    t.Errorf("Expected errSessionData, got %v", err)
+  }
+}
+
 type responseWriter struct {
   header http.Header
 }
@@ -111,4 +177,23 @@ func (r *responseWriter) Write([]byte) (int, error) {
 
 func (r *responseWriter) WriteHeader(int) {
 }
+
+type errorData struct {
+}
+
+func (e errorData) GetData(
+    id string) (map[interface{}]interface{}, error) {
+  return nil, errSessionData
+}
   
+func (e errorData) SaveData(
+    id string, values map[interface{}]interface{}) error {
+  return errSessionData
+}
+
+func withSData(s *RAMStore, data SessionData) *RAMStore {
+  result := *s
+  result.SData = data
+  result.Data = nil
+  return &result
+}

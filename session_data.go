@@ -50,7 +50,24 @@ func newRAMSessionsForTesting(maxAge int, clock func() int64) *RAMSessions {
 // Get returns nil if the session ID does not exist or if the session data
 // for the session ID expired from too much inactivity.
 func (r *RAMSessions) Get(id string) map[interface{}]interface{} {
-  result := r.get(id)
+  result := r.get(id, true)
+  if result == nil {
+    return nil
+  }
+  return copyMap(result)
+}
+
+// GetData returns Get(id), nil
+// GetData is draft API and is subject to change.
+func (r *RAMSessions) GetData(id string) (map[interface{}]interface{}, error) {
+  return r.Get(id), nil
+}
+
+// Poll works just like Get except that calling Poll does not keep session
+// data from expiring.
+// Poll is draft API and is subject to change.
+func (r *RAMSessions) Poll(id string) map[interface{}]interface{} {
+  result := r.get(id, false)
   if result == nil {
     return nil
   }
@@ -66,6 +83,14 @@ func (r *RAMSessions) Save(id string, data map[interface{}]interface{}) {
   r.data[id] = &ramSession{data, r.clock()}
 }
 
+// SaveData calls Save(id, data) and returns nil.
+// SaveData is draft API and is subject to change.
+func (r *RAMSessions) SaveData(
+    id string, data map[interface{}]interface{}) error {
+  r.Save(id, data)
+  return nil
+}
+
 // Purge removes session data that has already expired. Clients need not call
 // this manually as a separate go routine calls this periodically.
 func (r *RAMSessions) Purge() {
@@ -79,14 +104,22 @@ func (r *RAMSessions) Purge() {
   }
 }
 
-func (r *RAMSessions) get(id string) map[interface{}]interface{} {
+// AsPoller returns a view of this instance that does not keep session data
+// from expiring when it is fetched.
+// AsPoller is draft API and is subject to change.
+func (r *RAMSessions) AsPoller() SessionData {
+  return poller{r}
+}
+
+func (r *RAMSessions) get(
+    id string, updateLastAccessed bool) map[interface{}]interface{} {
   r.mutex.Lock()
   defer r.mutex.Unlock()
   ramSession := r.data[id]
   if ramSession == nil {
     return nil
   }
-  return ramSession.Get(r.clock(), r.maxAge)
+  return ramSession.Get(r.clock(), r.maxAge, updateLastAccessed)
 }
 
 func (r *RAMSessions) lenForTesting() int {
@@ -100,16 +133,29 @@ type ramSession struct {
   lastAccessed int64
 }
 
-func (r *ramSession) Get(now int64, maxAge int64) map[interface{}]interface{} {
+func (r *ramSession) Get(
+    now int64,
+    maxAge int64,
+    updateLastAccessed bool) map[interface{}]interface{} {
   if r.Expired(now, maxAge) {
     return nil
   }
-  r.lastAccessed = now
+  if updateLastAccessed {
+    r.lastAccessed = now
+  }
   return r.data
 }
 
 func (r *ramSession) Expired(now int64, maxAge int64) bool {
   return now - r.lastAccessed > maxAge
+}
+
+type poller struct {
+  *RAMSessions
+}
+
+func (p poller) GetData(id string) (map[interface{}]interface{}, error) {
+  return p.Poll(id), nil
 }
 
 func nowInSeconds() int64 {

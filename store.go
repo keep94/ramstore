@@ -15,6 +15,18 @@ import (
   "strings"
 )
 
+// Clients can write their own implementation of the SessionData interface
+// if they cannot use RAMSessions.
+// SessionData is draft API and is subject to change.
+type SessionData interface {
+  // GetData gets session data by id. GetData must return a shallow copy of
+  // the data.
+  GetData(id string) (map[interface{}]interface{}, error)
+  // SaveData saves session data by id. SaveData must make a shallow copy of
+  // values before saving.
+  SaveData(id string, values map[interface{}]interface{}) error
+}
+
 // RAMStore is an in-memory session store for Gorilla Web Toolkit. This store
 // makes shallow copies of maps, so value objects such as string and int can be
 // safely used with in-memory sessions with no regard for synchronization.
@@ -24,10 +36,17 @@ import (
 type RAMStore struct {
   Options *sessions.Options
   Data *RAMSessions
+  // Client sets either Data or SData leaving the other nil. If both Data and
+  // SData are non-nil, the results are undefined.
+  // SData is draft API and is subject to change.
+  SData SessionData
 }
   
 // NewRAMStore creates a new in-memory session store. maxAge is the maximum
-// time of inactivity in seconds before a session expires.
+// time of inactivity in seconds before a session expires. NewRamStore is
+// a convenience routine that returns a *RamStore with the Data field set
+// and the SData field nil. The returned *RamStore uses '/' as the cookie
+// path.
 func NewRAMStore(maxAge int) *RAMStore {
   return &RAMStore{
       Options: &sessions.Options {
@@ -47,7 +66,7 @@ func (s *RAMStore) Get(r *http.Request, name string) (*sessions.Session, error) 
 // New fetches the session from this store. name is the name of the cookie
 // holding the session ID. Get calls New if the session is not already cached
 // in the request's context. This implementation of New never returns a non-nil
-// error.
+// error if client is storing sessions data in a *RamSessions instance.
 func (s *RAMStore) New(r *http.Request, name string) (*sessions.Session, error) {
   session := sessions.NewSession(s, name)
   defaultOptions := *s.Options
@@ -55,32 +74,48 @@ func (s *RAMStore) New(r *http.Request, name string) (*sessions.Session, error) 
   session.IsNew = true
   if c, errCookie := r.Cookie(name); errCookie == nil {
     session.ID = c.Value
-    s.load(session)
+    if err := s.load(session); err != nil {
+      return session, err
+    }
   }
   return session, nil
 }
 
 // Save saves a session to the store. If the session has no ID, Save assigns
-// a random one. This implementation of Save never returns a non-nil error.
+// a random one. This implementation of Save never returns a non-nil error
+// if client is storing sessions data in a *RamSessions instance.
 func (s *RAMStore) Save(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
   if session.ID == "" {
     session.ID = strings.TrimRight(
         base32.StdEncoding.EncodeToString(
             securecookie.GenerateRandomKey(32)), "=")
   }
-  s.save(session)
+  if err := s.save(session); err != nil {
+    return err
+  }
   http.SetCookie(w, sessions.NewCookie(session.Name(), session.ID, session.Options))
   return nil
 }
 
-func (s *RAMStore) save(session *sessions.Session) {
-  s.Data.Save(session.ID, session.Values)
+func (s *RAMStore) save(session *sessions.Session) error {
+  return s.getData().SaveData(session.ID, session.Values)
 }
 
-func (s *RAMStore) load(session *sessions.Session) {
-  sessionData := s.Data.Get(session.ID)
+func (s *RAMStore) load(session *sessions.Session) error {
+  sessionData, err := s.getData().GetData(session.ID)
+  if err != nil {
+    return err
+  }
   if sessionData != nil {
     session.Values = sessionData
     session.IsNew = false
   }
+  return nil
+}
+
+func (s *RAMStore) getData() SessionData {
+  if s.Data != nil {
+    return s.Data
+  }
+  return s.SData
 }

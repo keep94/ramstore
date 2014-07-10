@@ -66,6 +66,22 @@ func TestGetAndSave(t *testing.T) {
   }
 }
 
+func TestPolling(t *testing.T) {
+  c := newFakeClock()
+  r := newRAMSessionsForTesting(900, c.NowFunc()).AsPoller()
+  m := map[interface{}]interface{} {5: 8}
+  r.SaveData("key", m)
+  c.Wait(900)
+  data, _ := r.GetData("key")
+  if output := data[5].(int); output != 8 {
+    t.Errorf("Expected 8, got %v", output)
+  }
+  c.Wait(1)
+  if output, _ := r.GetData("key"); output != nil {
+    t.Errorf("Expected nil, got %v", output)
+  }
+}
+
 func TestGetDoesDefensiveCopy(t *testing.T) {
   c := newFakeClock()
   r := newRAMSessionsForTesting(900, c.NowFunc())
