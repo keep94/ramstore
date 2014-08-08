@@ -194,6 +194,5 @@ func (e errorData) SaveData(
 func withSData(s *RAMStore, data SessionData) *RAMStore {
   result := *s
   result.SData = data
-  result.Data = nil
   return &result
 }

@@ -37,7 +37,7 @@ type RAMStore struct {
   Options *sessions.Options
   Data *RAMSessions
   // Client sets either Data or SData leaving the other nil. If both Data and
-  // SData are non-nil, the results are undefined.
+  // SData are non-nil then SData takes precedence.
   // SData is draft API and is subject to change.
   SData SessionData
 }
@@ -114,8 +114,8 @@ func (s *RAMStore) load(session *sessions.Session) error {
 }
 
 func (s *RAMStore) getData() SessionData {
-  if s.Data != nil {
-    return s.Data
+  if s.SData != nil {
+    return s.SData
   }
-  return s.SData
+  return s.Data
 }
