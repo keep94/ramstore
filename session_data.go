@@ -58,14 +58,12 @@ func (r *RAMSessions) Get(id string) map[interface{}]interface{} {
 }
 
 // GetData returns Get(id), nil
-// GetData is draft API and is subject to change.
 func (r *RAMSessions) GetData(id string) (map[interface{}]interface{}, error) {
   return r.Get(id), nil
 }
 
 // Poll works just like Get except that calling Poll does not keep session
 // data from expiring.
-// Poll is draft API and is subject to change.
 func (r *RAMSessions) Poll(id string) map[interface{}]interface{} {
   result := r.get(id, false)
   if result == nil {
@@ -84,7 +82,6 @@ func (r *RAMSessions) Save(id string, data map[interface{}]interface{}) {
 }
 
 // SaveData calls Save(id, data) and returns nil.
-// SaveData is draft API and is subject to change.
 func (r *RAMSessions) SaveData(
     id string, data map[interface{}]interface{}) error {
   r.Save(id, data)
@@ -106,7 +103,6 @@ func (r *RAMSessions) Purge() {
 
 // AsPoller returns a view of this instance that does not keep session data
 // from expiring when it is fetched.
-// AsPoller is draft API and is subject to change.
 func (r *RAMSessions) AsPoller() SessionData {
   return poller{r}
 }

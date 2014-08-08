@@ -15,9 +15,8 @@ import (
   "strings"
 )
 
-// Clients can write their own implementation of the SessionData interface
-// if they cannot use RAMSessions.
-// SessionData is draft API and is subject to change.
+// Clients may choose to write their own implementation of the SessionData
+// interface instead of using RAMSessions.
 type SessionData interface {
   // GetData gets session data by id. GetData must return a shallow copy of
   // the data.
@@ -38,7 +37,6 @@ type RAMStore struct {
   Data *RAMSessions
   // Client sets either Data or SData leaving the other nil. If both Data and
   // SData are non-nil then SData takes precedence.
-  // SData is draft API and is subject to change.
   SData SessionData
 }
   
