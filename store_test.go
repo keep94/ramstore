@@ -107,6 +107,7 @@ func TestUseSData(t *testing.T) {
   request := &http.Request{}
   s := NewRAMStore(900)
   s = withSData(s, s.Data)
+  s.Data = nil
   session, err := s.Get(request, "session-cookie")
   if err != nil {
     t.Errorf("Expected no error getting session, got %v", err)
