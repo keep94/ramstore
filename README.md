@@ -12,12 +12,6 @@ be clearly marked as "draft" in the documentation.
 
 	import "github.com/keep94/ramstore"
 
-## Installing
-
-	go get github.com/keep94/ramstore
-
 ## Online Documentation
-
-Online documentation is available [here](http://godoc.org/github.com/keep94/ramstore).
 
 Gorilla web toolkit sessions documentation is available [here] (http://www.gorillatoolkit.org/pkg/sessions).
