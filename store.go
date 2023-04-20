@@ -9,8 +9,8 @@ package ramstore
 
 import (
 	"encoding/base32"
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/sessions"
+	"github.com/keep94/securecookie"
+	"github.com/keep94/sessions"
 	"net/http"
 	"strings"
 )

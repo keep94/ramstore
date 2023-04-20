@@ -1,4 +1,4 @@
-github.com/gorilla/securecookie v1.1.1 h1:miw7JPhV+b/lAHSXz4qd/nN9jRiAFV5FwjeKyCS8BvQ=
-github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
-github.com/gorilla/sessions v1.2.1 h1:DHd3rPN5lE3Ts3D8rKkQ8x/0kqfeNmBAaiSi+o7FsgI=
-github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
+github.com/keep94/securecookie v0.1.1 h1:mE0byVoxSWXByR+RroDw2o9nM84W4cDM5IqioOSHw1o=
+github.com/keep94/securecookie v0.1.1/go.mod h1:pJC1AUsh/C3uCqswdODRn+5w6/0Ezy+3QKKKf6hAcCU=
+github.com/keep94/sessions v0.1.0 h1:sKY/ZVox4+SBTfwGnZ54zeLPCUI3HfGqT/w4sFXzHEI=
+github.com/keep94/sessions v0.1.0/go.mod h1:xV8BxgCZFYA8E1+kaO5jMVI8x+/wr5Qe+M4rhaCgmj4=
